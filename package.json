@@ -1,0 +1,11 @@
+{
+  "name": "gym-training",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal gym training PWA built around a fixed equipment list.",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node --test"
+  }
+}
