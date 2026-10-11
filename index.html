@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0f">
+  <meta name="description" content="Personal gym training app built around your gym's equipment.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Gym Training</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#/"><span class="logo">GT</span> Gym Training</a>
+    <a class="icon" href="#/settings" aria-label="Settings">⚙</a>
+  </header>
+
+  <a id="resume" class="resume" href="#/workout" hidden>● Workout in progress: tap to resume</a>
+
+  <main id="view" aria-live="polite"></main>
+
+  <div id="rest" class="rest" hidden>
+    <div class="rest-fill"></div>
+    <span>Rest</span><b class="rest-time">0:00</b>
+    <button class="btn sm ghost" data-action="rest-add">+15s</button>
+    <button class="btn sm" data-action="rest-skip">Skip</button>
+  </div>
+
+  <nav class="nav" aria-label="Main">
+    <a href="#/"><i>⌂</i>Home</a>
+    <a href="#/train"><i>⚡</i>Train</a>
+    <a href="#/programs"><i>▦</i>Programs</a>
+    <a href="#/library"><i>☰</i>Library</a>
+    <a href="#/progress"><i>↗</i>Log</a>
+  </nav>
+
+  <div id="sheet" class="sheet" hidden></div>
+  <div id="toast" class="toast" role="status"></div>
+
+  <noscript>This app needs JavaScript.</noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
