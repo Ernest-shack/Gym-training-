@@ -1,7 +1,9 @@
 // Exercise library: every exercise can be done with the gear in GEAR.
 //
 // pattern  - movement slot used by the workout generator
-// type     - 'weight' (kg/lb x reps), 'bw' (bodyweight reps, optional added load), 'time' (seconds)
+// type     - 'weight' (kg/lb x reps), 'bw' (bodyweight reps, optional added load), 'time' (seconds),
+//            'cardio' (speed x minutes)
+// dose     - optional fixed [sets, low, high, rest] that overrides the goal-based prescription
 // level    - 1 beginner-friendly, 2 intermediate, 3 advanced
 // compound - multi-joint lift (gets lower reps / longer rest)
 
@@ -14,6 +16,7 @@ export const MUSCLES = {
 
 const ex = (id, name, gear, pattern, primary, o = {}) => ({
   id, name, gear, pattern, primary,
+  dose: o.dose || null,
   secondary: o.secondary || [],
   type: o.type || 'weight',
   level: o.level || 1,
@@ -323,6 +326,114 @@ export const EXERCISES = [
   ex('decline-russian-twist', 'Decline Russian Twist', ['ab-bench', 'accessory'], 'core', ['core'], {
     type: 'bw', level: 2, cues: ['Sit partway down the decline', 'Rotate a med ball side to side', 'Keep your chest up'],
   }),
+  // 20 Dumbbells (bench = the adjustable bench from #15)
+  ex('db-bench-press', 'Dumbbell Bench Press', ['dumbbells', 'seated-cable-row'], 'hpush', ['chest'], {
+    secondary: ['triceps', 'shoulders'], compound: true,
+    cues: ['Adjustable bench flat; kick the dumbbells up off your knees', 'Lower until the dumbbells are beside your chest, elbows at about 45°', 'Press up and slightly in'],
+  }),
+  ex('db-incline-press', 'Incline Dumbbell Press', ['dumbbells', 'seated-cable-row'], 'hpush', ['chest', 'shoulders'], {
+    secondary: ['triceps'], compound: true,
+    cues: ['Bench at 30°', 'Dumbbells lower to your upper chest', 'Keep your shoulder blades pinned back'],
+  }),
+  ex('db-fly', 'Dumbbell Fly', ['dumbbells', 'seated-cable-row'], 'chestIso', ['chest'], {
+    level: 2, cues: ['Flat bench, palms facing each other', 'Open your arms wide with a slight elbow bend', 'Stop at a comfortable stretch'],
+  }),
+  ex('db-shoulder-press', 'Seated Dumbbell Shoulder Press', ['dumbbells', 'seated-cable-row'], 'vpush', ['shoulders'], {
+    secondary: ['triceps'], compound: true,
+    cues: ['Bench upright, back against the pad', 'Start with the dumbbells at ear height', 'Press up without clanking them together'],
+  }),
+  ex('db-lateral-raise', 'Dumbbell Lateral Raise', ['dumbbells'], 'latRaise', ['shoulders'], {
+    cues: ['Light weights, slight lean forward', 'Raise out to the side to shoulder height', 'Lower slowly'],
+  }),
+  ex('db-rear-delt-fly', 'Bent-Over Dumbbell Rear Delt Fly', ['dumbbells'], 'rearDelt', ['rearDelts'], {
+    secondary: ['back'], cues: ['Hinge forward with a flat back', 'Raise your arms out to the side', 'Do not shrug'],
+  }),
+  ex('db-row', 'Single-Arm Dumbbell Row', ['dumbbells', 'seated-cable-row'], 'hpull', ['lats', 'back'], {
+    secondary: ['biceps'], compound: true,
+    cues: ['One hand and knee on the bench, back flat', 'Pull the dumbbell to your hip', 'Do all reps on one arm, then switch'],
+  }),
+  ex('db-curl', 'Dumbbell Curl', ['dumbbells'], 'biceps', ['biceps'], {
+    secondary: ['forearms'], cues: ['Elbows stay at your sides', 'Turn your palms up as you curl', 'Lower slowly'],
+  }),
+  ex('db-hammer-curl', 'Hammer Curl', ['dumbbells'], 'biceps', ['biceps', 'forearms'], {
+    cues: ['Palms facing each other the whole time', 'No swinging', 'Squeeze at the top'],
+  }),
+  ex('db-overhead-triceps', 'Dumbbell Overhead Triceps Extension', ['dumbbells'], 'triceps', ['triceps'], {
+    cues: ['Hold one dumbbell with both hands overhead', 'Lower it behind your head, elbows pointing forward', 'Straighten fully'],
+  }),
+  ex('db-rdl', 'Dumbbell Romanian Deadlift', ['dumbbells'], 'hinge', ['hamstrings', 'glutes'], {
+    secondary: ['lowerBack'], compound: true,
+    cues: ['Soft knees; push your hips back', 'Dumbbells slide down your thighs', 'Stand up by squeezing your glutes'],
+  }),
+  ex('db-goblet-squat', 'Dumbbell Goblet Squat', ['dumbbells'], 'squat', ['quads', 'glutes'], {
+    secondary: ['core'], compound: true,
+    cues: ['Hold one end of a dumbbell at your chest', 'Sit down between your knees', 'Chest stays tall'],
+  }),
+  ex('db-walking-lunge', 'Dumbbell Walking Lunge', ['dumbbells'], 'lunge', ['quads', 'glutes'], {
+    compound: true, level: 2,
+    cues: ['Dumbbell in each hand', 'Long step; back knee drops toward the floor', 'Push through the front heel to step forward'],
+  }),
+  ex('db-step-up', 'Dumbbell Step-Up', ['dumbbells', 'plyo'], 'lunge', ['quads', 'glutes'], {
+    compound: true,
+    cues: ['Dumbbell in each hand, whole foot on the box', 'Push through the heel on the box', 'Do all reps on one leg, then switch'],
+  }),
+  ex('db-calf-raise', 'Single-Leg Dumbbell Calf Raise', ['dumbbells', 'plyo'], 'calves', ['calves'], {
+    cues: ['Ball of your foot on a plyo box edge, dumbbell on the same side', 'Hold something for balance', 'Full stretch, pause at the top'],
+  }),
+  ex('db-farmer-carry', 'Dumbbell Farmer Carry', ['dumbbells'], 'carry', ['forearms', 'core'], {
+    secondary: ['back'], type: 'time',
+    cues: ['Heavy dumbbell in each hand', 'Stand tall and take short, quick steps', 'Do not let your shoulders round'],
+  }),
+
+  // 21 Barbell & Plates (no squat rack: every lift starts from the floor)
+  ex('barbell-deadlift', 'Barbell Deadlift', ['barbell'], 'hinge', ['glutes', 'hamstrings', 'lowerBack'], {
+    secondary: ['back', 'forearms', 'quads'], compound: true, level: 2,
+    cues: ['Bar over mid-foot, shins close to the bar', 'Flat back; push the floor away', 'Lock out with your glutes, not by leaning back'],
+  }),
+  ex('barbell-rdl', 'Barbell Romanian Deadlift', ['barbell'], 'hinge', ['hamstrings', 'glutes'], {
+    secondary: ['lowerBack'], compound: true, level: 2,
+    cues: ['Deadlift the bar up first', 'Soft knees; push your hips back, bar close to your thighs', 'Stop when your hamstrings stretch and your back still stays flat'],
+  }),
+  ex('barbell-row', 'Barbell Bent-Over Row', ['barbell'], 'hpull', ['back', 'lats'], {
+    secondary: ['biceps', 'rearDelts', 'lowerBack'], compound: true, level: 2,
+    cues: ['Hinge to about 45° with a flat back', 'Pull the bar to your lower ribs', 'No jerking with your torso'],
+  }),
+  ex('barbell-floor-press', 'Barbell Floor Press', ['barbell'], 'hpush', ['chest', 'triceps'], {
+    secondary: ['shoulders'], compound: true,
+    cues: ['Lie under the bar on the floor (no rack needed)', 'Lower until your upper arms touch the floor', 'Pause, then press'],
+  }),
+  ex('barbell-ohp', 'Barbell Overhead Press', ['barbell'], 'vpush', ['shoulders'], {
+    secondary: ['triceps', 'core'], compound: true, level: 2,
+    cues: ['Clean the bar from the floor to your shoulders', 'Squeeze your glutes; press straight up past your face', 'Finish with the bar over your mid-foot'],
+  }),
+  ex('barbell-curl', 'Barbell Curl', ['barbell'], 'biceps', ['biceps'], {
+    secondary: ['forearms'], cues: ['Shoulder-width grip', 'Elbows stay at your sides', 'No swinging your hips'],
+  }),
+  ex('barbell-skullcrusher', 'Barbell Skull Crusher', ['barbell', 'seated-cable-row'], 'triceps', ['triceps'], {
+    level: 2, cues: ['Lie on the flat bench, arms straight up', 'Bend your elbows to lower the bar toward your forehead', 'Upper arms stay still'],
+  }),
+  ex('barbell-hip-thrust', 'Barbell Hip Thrust', ['barbell', 'seated-cable-row'], 'glute', ['glutes'], {
+    secondary: ['hamstrings'], compound: true, level: 2,
+    cues: ['Upper back on the bench, padded bar across your hips', 'Chin tucked; ribs down', 'Drive through your heels and pause at the top'],
+  }),
+
+  // 22 Treadmill
+  ex('treadmill-incline-walk', 'Treadmill Incline Walk', ['treadmill'], 'cardio', ['cardio'], {
+    secondary: ['glutes', 'calves'], type: 'cardio', dose: [1, 10, 20, 0],
+    cues: ['Incline 8–12%, brisk walking pace', 'Do not hold the handrails', 'Breathe hard but stay able to talk'],
+  }),
+  ex('treadmill-run', 'Treadmill Steady Run', ['treadmill'], 'cardio', ['cardio'], {
+    type: 'cardio', level: 2, dose: [1, 15, 30, 0],
+    cues: ['1% incline feels like running outdoors', 'Pace you could hold a short conversation at', 'Start with 3 easy minutes'],
+  }),
+  ex('treadmill-intervals', 'Treadmill Sprint Intervals', ['treadmill'], 'conditioning', ['cardio'], {
+    secondary: ['quads', 'hamstrings'], type: 'time', level: 2, dose: [6, 20, 30, 60],
+    cues: ['Warm up 5 minutes first', 'Sprint hard, then step onto the side rails to rest', 'Log the sprint seconds; note the speed in your head for next time'],
+  }),
+  ex('treadmill-hill-repeats', 'Treadmill Hill Repeats', ['treadmill'], 'conditioning', ['cardio'], {
+    secondary: ['glutes', 'calves'], type: 'time', dose: [5, 60, 90, 60],
+    cues: ['Incline 10–15% at a hard walk or jog', 'Drop to 1% and walk between repeats', 'Keep the same speed on every repeat'],
+  }),
 ];
 
 export const exerciseById = Object.fromEntries(EXERCISES.map((e) => [e.id, e]));
@@ -332,5 +443,5 @@ export const PATTERN_LABELS = {
   hpull: 'Horizontal pull', vpull: 'Vertical pull', chestIso: 'Chest isolation', latRaise: 'Side delts',
   rearDelt: 'Rear delts', biceps: 'Biceps', triceps: 'Triceps', quadIso: 'Quad isolation',
   hamIso: 'Hamstring isolation', glute: 'Glutes', calves: 'Calves', core: 'Core', carry: 'Carry / grip',
-  power: 'Power', conditioning: 'Conditioning',
+  power: 'Power', conditioning: 'Conditioning', cardio: 'Cardio',
 };

@@ -1,4 +1,5 @@
-// The 19 pieces of gear in the gym inventory. `no` matches the inventory sheet.
+// The gym's gear. Items 1–19 match the inventory sheet (pictures cropped from it);
+// 20–22 were added later and use simple drawings.
 export const GEAR = [
   { id: 'chest-press', no: 1, name: 'Chest Press', kind: 'Plate-loaded machine' },
   { id: 'row-machine', no: 2, name: 'Row Machine', kind: 'Plate-loaded machine' },
@@ -19,6 +20,9 @@ export const GEAR = [
   { id: 'leg-extension', no: 17, name: 'Leg Extension', kind: 'Selectorized machine' },
   { id: 'leg-curl', no: 18, name: 'Seated Leg Curl', kind: 'Selectorized machine' },
   { id: 'ab-bench', no: 19, name: 'Ab Bench', kind: 'Bench' },
-].map((g) => ({ ...g, img: `img/gear/${String(g.no).padStart(2, '0')}.jpg` }));
+  { id: 'dumbbells', no: 20, name: 'Dumbbells', kind: 'Free weights', ext: 'svg' },
+  { id: 'barbell', no: 21, name: 'Barbell & Plates', kind: 'Free weights (no separate rack)', ext: 'svg' },
+  { id: 'treadmill', no: 22, name: 'Treadmill', kind: 'Cardio machine', ext: 'svg' },
+].map(({ ext = 'jpg', ...g }) => ({ ...g, img: `img/gear/${String(g.no).padStart(2, '0')}.${ext}` }));
 
 export const gearById = Object.fromEntries(GEAR.map((g) => [g.id, g]));

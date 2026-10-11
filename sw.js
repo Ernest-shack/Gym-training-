@@ -1,5 +1,5 @@
 // Offline support: precache the app shell.
-const CACHE = 'gym-training-v1';
+const CACHE = 'gym-training-v2';
 const ASSETS = [
   './',
   'index.html',
@@ -33,6 +33,9 @@ const ASSETS = [
   'img/gear/17.jpg',
   'img/gear/18.jpg',
   'img/gear/19.jpg',
+  'img/gear/20.svg',
+  'img/gear/21.svg',
+  'img/gear/22.svg',
 ];
 
 self.addEventListener('install', (e) => {

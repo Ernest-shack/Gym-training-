@@ -9,9 +9,10 @@ import {
 
 const profile = { goal: 'hypertrophy', level: 2, minutes: 60, units: 'kg' };
 
-test('gear list matches the 19-item inventory', () => {
-  assert.equal(GEAR.length, 19);
-  assert.deepEqual(GEAR.map((g) => g.no), Array.from({ length: 19 }, (_, i) => i + 1));
+test('gear list: 19-item inventory plus dumbbells, barbell, treadmill', () => {
+  assert.equal(GEAR.length, 22);
+  assert.deepEqual(GEAR.map((g) => g.no), Array.from({ length: 22 }, (_, i) => i + 1));
+  assert.ok(['dumbbells', 'barbell', 'treadmill'].every((id) => gearById[id]));
 });
 
 test('every exercise is valid and every gear item has exercises', () => {
@@ -22,7 +23,7 @@ test('every exercise is valid and every gear item has exercises', () => {
     e.gear.forEach((g) => assert.ok(gearById[g], `${e.id}: unknown gear ${g}`));
     [...e.primary, ...e.secondary].forEach((m) => assert.ok(MUSCLES[m], `${e.id}: unknown muscle ${m}`));
     assert.ok(PATTERN_LABELS[e.pattern], `${e.id}: unknown pattern ${e.pattern}`);
-    assert.ok(['weight', 'bw', 'time'].includes(e.type));
+    assert.ok(['weight', 'bw', 'time', 'cardio'].includes(e.type));
     assert.ok(e.cues.length > 0, `${e.id}: missing cues`);
   }
   for (const g of GEAR) assert.ok(EXERCISES.some((e) => e.gear.includes(g.id)), `${g.name} has no exercises`);
@@ -99,4 +100,21 @@ test('double progression: add weight only when all sets hit the top', () => {
   assert.equal(stay.w, 40);
   assert.equal(stay.r, 12);
   assert.equal(suggestNext([], 'leg-extension', target), null);
+});
+
+test('fixed doses override the goal scheme (treadmill)', () => {
+  const walk = EXERCISES.find((e) => e.id === 'treadmill-incline-walk');
+  const t = prescribe(walk, { goal: 'strength', level: 1 });
+  assert.equal(t.sets, 1);
+  assert.deepEqual(t.reps, [10, 20]);
+  assert.equal(t.type, 'cardio');
+  const cardio = generateWorkout({ focus: 'cardio', minutes: 45, level: 1, rng: seededRng(3) });
+  assert.equal(EXERCISES.find((e) => e.id === cardio[0].exId).gear[0], 'treadmill');
+});
+
+test('cardio progression adds time, then speed', () => {
+  const target = { sets: 1, reps: [10, 20], rest: 0, type: 'cardio' };
+  const hist = (w, r) => [{ date: '2026-01-01', exercises: [{ exId: 'treadmill-incline-walk', target, sets: [{ w, r, done: true }] }] }];
+  assert.deepEqual([suggestNext(hist(5, 12), 'treadmill-incline-walk', target).w, suggestNext(hist(5, 12), 'treadmill-incline-walk', target).r], [5, 14]);
+  assert.deepEqual([suggestNext(hist(5, 20), 'treadmill-incline-walk', target).w, suggestNext(hist(5, 20), 'treadmill-incline-walk', target).r], [5.5, 20]);
 });

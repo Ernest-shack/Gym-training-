@@ -1,7 +1,7 @@
 {
   "name": "Gym Training",
   "short_name": "Gym",
-  "description": "Personal workouts, programs and logging built around your gym's 19 machines.",
+  "description": "Personal workouts, programs and logging built around your gym's equipment.",
   "start_url": "./#/",
   "scope": "./",
   "display": "standalone",

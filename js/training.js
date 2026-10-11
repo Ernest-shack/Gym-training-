@@ -19,6 +19,7 @@ export const FOCUSES = {
   legs: { name: 'Legs', slots: ['squat', 'hinge', 'quadIso', 'hamIso', 'lunge', 'calves', 'glute', 'core'] },
   arms: { name: 'Arms & Shoulders', slots: ['biceps', 'triceps', 'latRaise', 'biceps', 'triceps', 'rearDelt', 'carry'] },
   core: { name: 'Core', slots: ['core', 'core', 'carry', 'core', 'core', 'core'] },
+  cardio: { name: 'Cardio', slots: ['cardio', 'conditioning', 'core', 'conditioning', 'carry', 'core'], goal: 'endurance' },
   conditioning: { name: 'Conditioning', slots: ['power', 'conditioning', 'hinge', 'conditioning', 'lunge', 'core', 'carry', 'conditioning'], goal: 'endurance' },
 };
 
@@ -31,6 +32,10 @@ const SCHEMES = {
 };
 
 export function prescribe(exercise, { goal = 'general', level = 1 } = {}, week = null) {
+  if (exercise.dose) {
+    const [sets, lo, hi, rest] = exercise.dose;
+    return { sets: week && week.deload ? Math.max(1, sets - 1) : sets, reps: [lo, hi], rest, type: exercise.type };
+  }
   const scheme = SCHEMES[goal] || SCHEMES.general;
   let sets, lo, hi, rest;
   if (exercise.pattern === 'power') [sets, lo, hi, rest] = [4, 3, 5, 90];
@@ -208,6 +213,14 @@ export function suggestNext(history, exId, target, units = 'kg') {
   const working = last.sets.filter((s) => (Number(s.w) || 0) === topW);
   const allTop = working.length > 0 && working.every((s) => (Number(s.r) || 0) >= hi);
 
+  if (target.type === 'cardio') {
+    // w = speed, r = minutes: build up time first, then speed.
+    const best = last.sets.reduce((a, b) => ((Number(b.w) || 0) * (Number(b.r) || 0) > (Number(a.w) || 0) * (Number(a.r) || 0) ? b : a));
+    const speed = Number(best.w) || 0;
+    const mins = Number(best.r) || 0;
+    if (mins >= hi && speed) return { w: round(speed + 0.5), r: hi, msg: `You did ${hi} min: go 0.5 faster.` };
+    return { w: speed || '', r: Math.min(hi, Math.max(lo, mins + 2)), msg: speed ? `Same speed, aim for ${Math.min(hi, Math.max(lo, mins + 2))} min.` : '' };
+  }
   if (target.type === 'time') {
     const best = Math.max(...last.sets.map((s) => Number(s.r) || 0));
     return { w: topW || '', r: allTop ? best + 5 : Math.max(lo, best), msg: allTop ? `Hit ${hi}s last time: go for +5s.` : `Last best: ${best}s.` };

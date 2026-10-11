@@ -31,8 +31,16 @@ const fmtDur = (sec) => {
 };
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const fmtClock = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
-const repsLabel = (t) => (t.type === 'time' ? `${t.reps[0]}–${t.reps[1]} s` : `${t.reps[0]}–${t.reps[1]} reps`);
-const targetLabel = (t) => `${t.sets} × ${repsLabel(t)} · rest ${t.rest >= 90 ? fmtClock(t.rest) : t.rest + 's'}`;
+const speedUnit = () => (units() === 'lb' ? 'mph' : 'km/h');
+const distUnit = () => (units() === 'lb' ? 'mi' : 'km');
+const REP_UNIT = { time: 's', cardio: 'min' };
+const repsLabel = (t) => `${t.reps[0]}–${t.reps[1]} ${REP_UNIT[t.type] || 'reps'}`;
+const targetLabel = (t) => `${t.sets} × ${repsLabel(t)}${t.rest ? ` · rest ${t.rest >= 90 ? fmtClock(t.rest) : t.rest + 's'}` : ''}`;
+// One logged set as text, e.g. "40 kg × 10 reps", "45 s", "20 min @ 6 km/h".
+const fmtSet = (e, s) => {
+  if (e.type === 'cardio') return `${s.r} min${Number(s.w) ? ` @ ${s.w} ${speedUnit()}` : ''}`;
+  return `${Number(s.w) ? `${s.w} ${units()} × ` : ''}${s.r} ${REP_UNIT[e.type] || 'reps'}`;
+};
 const muscleList = (ids) => ids.map((m) => MUSCLES[m]).join(', ');
 const startOfWeek = (d) => {
   const x = new Date(d);
@@ -40,7 +48,7 @@ const startOfWeek = (d) => {
   x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
   return x.getTime();
 };
-const setVolume = (ex, s) => (ex.type === 'weight' || Number(s.w) ? (Number(s.w) || 0) * (Number(s.r) || 0) : 0);
+const setVolume = (ex, s) => (ex.type === 'weight' || ex.type === 'bw' ? (Number(s.w) || 0) * (Number(s.r) || 0) : 0);
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -168,7 +176,7 @@ function onboarding() {
   return `
   <section class="hero">
     <h1>Welcome to your gym</h1>
-    <p class="muted">Set up your profile once. Every workout is built from the 19 machines in your gym.</p>
+    <p class="muted">Set up your profile once. Every workout is built from the equipment in your gym.</p>
   </section>
   <form class="card stack" data-form="profile">
     ${profileFields(p)}
@@ -288,8 +296,8 @@ function workout() {
 function workoutCard(x, i) {
   const ex = exerciseById[x.exId];
   const u = units();
-  const wLabel = ex.type === 'weight' ? u : `+${u}`;
-  const rLabel = ex.type === 'time' ? 'sec' : 'reps';
+  const wLabel = ex.type === 'cardio' ? speedUnit() : ex.type === 'weight' ? u : `+${u}`;
+  const rLabel = { time: 'sec', cardio: 'min' }[ex.type] || 'reps';
   return `
   <article class="card wcard">
     <header class="row">
@@ -304,7 +312,7 @@ function workoutCard(x, i) {
       ${x.sets.map((s, j) => `
       <div class="set ${s.done ? 'done' : ''}">
         <span class="n">${j + 1}</span>
-        <input inputmode="decimal" type="number" step="any" min="0" placeholder="${ex.type === 'weight' ? '0' : 'BW'}" value="${esc(s.w)}" data-field="w" data-i="${i}" data-j="${j}" aria-label="Set ${j + 1} weight">
+        <input inputmode="decimal" type="number" step="any" min="0" placeholder="${{ weight: '0', cardio: 'speed' }[ex.type] || 'BW'}" value="${esc(s.w)}" data-field="w" data-i="${i}" data-j="${j}" aria-label="Set ${j + 1} ${ex.type === 'cardio' ? 'speed' : 'weight'}">
         <input inputmode="numeric" type="number" min="0" value="${esc(s.r)}" data-field="r" data-i="${i}" data-j="${j}" aria-label="Set ${j + 1} ${rLabel}">
         <button class="check" data-action="toggle-set" data-i="${i}" data-j="${j}" aria-label="Mark set ${j + 1} done" aria-pressed="${s.done}">✓</button>
       </div>`).join('')}
@@ -381,7 +389,7 @@ function library() {
       <img src="${g.img}" alt="" loading="lazy">
       <span class="no">${g.no}</span>
       <b>${esc(g.name)}</b>
-      <small>${EXERCISES.filter((e) => e.gear.includes(g.id)).length} exercises${off.has(g.id) ? ' · unavailable' : ''}</small>
+      <small>${plural(EXERCISES.filter((e) => e.gear.includes(g.id)).length, 'exercise')}${off.has(g.id) ? ' · unavailable' : ''}</small>
     </a>`).join('')}</div>`}</div>`;
 }
 
@@ -406,14 +414,20 @@ function exercisePage(id) {
   const e = exerciseById[id];
   if (!e) return '<p>Exercise not found.</p>';
   const sessions = state.history.filter((w) => w.exercises.some((x) => x.exId === id));
+  const loaded = sessions.some((w) => w.exercises.find((x) => x.exId === id).sets.some((s) => Number(s.w)));
   const series = sessions.map((w) => {
     const sets = w.exercises.find((x) => x.exId === id).sets;
-    const val = e.type === 'weight' || sets.some((s) => Number(s.w))
-      ? Math.max(...sets.map((s) => e1rm(Number(s.w) || 0, Number(s.r) || 0)))
-      : Math.max(...sets.map((s) => Number(s.r) || 0));
+    const best = (f) => Math.max(...sets.map(f));
+    let val;
+    if (e.type === 'cardio') val = best((s) => ((Number(s.w) || 0) * (Number(s.r) || 0)) / 60);
+    else if (e.type === 'time') val = best((s) => Number(s.r) || 0);
+    else if (loaded) val = best((s) => e1rm(Number(s.w) || 0, Number(s.r) || 0));
+    else val = best((s) => Number(s.r) || 0);
     return { label: fmtDate(w.date), y: Math.round(val * 10) / 10 };
   });
-  const metric = e.type === 'time' ? 'Best hold (s)' : series.length && sessions.some((w) => w.exercises.find((x) => x.exId === id).sets.some((s) => Number(s.w))) ? `Estimated 1-rep max (${units()})` : 'Best set (reps)';
+  const metric = e.type === 'cardio' ? `Distance (${distUnit()})`
+    : e.type === 'time' ? 'Best set (s)'
+    : loaded ? `Estimated 1-rep max (${units()})` : 'Best set (reps)';
   const last = lastPerformance(state.history, id);
   return `
   <a class="back" href="#/library" data-action="back">‹ Back</a>
@@ -428,7 +442,7 @@ function exercisePage(id) {
   <div class="card">
     <h3>Your progress</h3>
     ${series.length >= 2 ? lineChart(series, { label: metric }) : `<p class="muted">${series.length ? 'Log one more session to see a chart.' : 'Not logged yet.'}</p>`}
-    ${last ? `<p class="small muted">Last time (${fmtDate(last.date)}): ${last.sets.map((s) => (Number(s.w) ? `${s.w}${units()}×${s.r}` : `${s.r}${e.type === 'time' ? 's' : ''}`)).join(', ')}</p>` : ''}
+    ${last ? `<p class="small muted">Last time (${fmtDate(last.date)}): ${last.sets.map((s) => esc(fmtSet(e, s))).join(', ')}</p>` : ''}
   </div>
   <button class="btn primary block" data-action="add-to-active" data-id="${e.id}">${state.active ? 'Add to current workout' : 'Start a workout with this'}</button>`;
 }
@@ -450,7 +464,7 @@ function logPage(id) {
     const e = exerciseById[x.exId];
     if (!e) return '';
     return `<div class="card"><a href="#/ex/${e.id}"><b>${esc(e.name)}</b></a>
-      <div class="muted small">${x.sets.map((s, i) => `Set ${i + 1}: ${Number(s.w) ? `${esc(s.w)} ${units()} × ` : ''}${esc(s.r)}${e.type === 'time' ? ' s' : ' reps'}`).join(' · ')}</div></div>`;
+      <div class="muted small">${x.sets.map((s, i) => `Set ${i + 1}: ${esc(fmtSet(e, s))}`).join(' · ')}</div></div>`;
   }).join('')}
   <button class="btn ghost block" data-action="repeat" data-id="${w.id}">Repeat this workout</button>
   <button class="btn danger-text block" data-action="delete-log" data-id="${w.id}">Delete workout</button>`;
